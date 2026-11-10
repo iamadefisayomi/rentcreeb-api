@@ -31,10 +31,12 @@ r.post('/register', async (req, res) => {
   const { data: taken } = await db.from('profiles').select('id').or(`phone.eq.${b.phone},email.eq.${b.email}`).maybeSingle();
   if (taken) throw conflict('An account with this email or phone already exists', 'ACCOUNT_EXISTS');
 
+  
   const { data, error } = await db.auth.admin.createUser({
     email: b.email, password: b.password, email_confirm: true,
     user_metadata: { first_name: b.firstName, last_name: b.lastName, phone: b.phone, role: b.role },
   });
+  
   if (error || !data.user) throw badRequest(error?.message ?? 'Could not create account', 'SIGNUP_FAILED');
 
   const { data: s, error: se } = await anonClient().auth.signInWithPassword({ email: b.email, password: b.password });
@@ -48,6 +50,7 @@ r.post('/register', async (req, res) => {
 /** identifier = email OR phone */
 r.post('/login', async (req, res) => {
   const { identifier, password } = z.object({ identifier: z.string().min(3), password: z.string().min(1) }).parse(req.body);
+  console.log(identifier, 'identifier')
   let email = identifier.toLowerCase();
   if (!identifier.includes('@')) {
     const phone = phoneSchema.parse(identifier);
